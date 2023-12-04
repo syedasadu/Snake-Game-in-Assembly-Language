@@ -1,30 +1,11 @@
 [org 0x100]
 		jmp start
 
-W1: db 'w'
-S1: db 's'
-A1: db 'a'
-D1: db 'd'
-movFlag: db 0
-msgOver: db 'Thanks For Playing Our Beauitiful Snake GAME'
-score_msg: db 'Your Score is : '
-score: dw 0
-msg1: db "****..........SNAKE GAME..........**** ",0
-names: db "-_  Asad Raza **********",0
-names1: db "-_ ******************",0
-str1: db "1.      UP(w) ", 0
-str2: db "2.      Left(A)  3.   Down(S)     4.  Right(D)", 0
-str3: db "CONTROLLING KEYS: ", 0
-colour: db 1
-count: dd 0
-dieFlag: db 0
-randNo: dw 260
-
+; Start From here 
 start:
     call clrscr
     call frontPage
     call load_border
-	call print_score
 	mov si, score_msg
     mov ax, 0xb800
     mov es, ax
@@ -51,11 +32,11 @@ clrscr:
     mov ax, 0xb800
     mov es, ax
     mov di, 0
-clr:
+clrlab:
     mov word [es:di], 0x0720
     add di, 2
     cmp di, 4000
-    jne clr
+    jne clrlab
     pop di
     pop es
     pop ax
@@ -161,8 +142,8 @@ frontPage:
     Call delay
 	Call delay
 
-; EATING 
-eat:
+; EATING FOOD FUNCTION
+foodEated:
 push bp
 mov bp, sp
 sub sp, 2
@@ -207,7 +188,7 @@ pop bp
 ret
 
 ; KEYBOARD INTTERUPT FUNCTION
-snake_int:
+keybordInterrupt:
     push ax
     mov ax, 0
     mov ah, 0x01 
@@ -240,13 +221,14 @@ rand_no:
 
 ; DELAY FUNCTION
 delay: 
-    mov dword[count], 200000
-looping_delay:
-	dec dword[count]
-	cmp dword[count], 0
-	jne looping_delay
+	push ax
+    mov eax, 200000
+delaylab:
+	dec eax
+	cmp eax, 0
+	jne delaylab
+	pop ax
     ret
-
 
 ; CLEAR SCREEN FUNCTION
 clear_scr:
@@ -257,11 +239,11 @@ clear_scr:
     mov ax, 0xb800
     mov es, ax
     xor di, di
-looping_clr:
+clr:
     mov word [es:di], 0x0720
     add di, 2
     cmp di, 4000
-    jne looping_clr
+    jne clr
 
     pop di
     pop es
@@ -275,6 +257,7 @@ push ax
 push es
 push di
 push cx
+push dx; change color
 
 mov ax, 0xb800
 mov es, ax
@@ -287,161 +270,99 @@ call checking_food
 call inner_checking_food
 mov ax, word[randNo]
 mov di, ax
-cmp byte[colour], 10
+cmp byte[colurFlag], 10
 jne skip_color
-mov byte[colour], 1
+mov byte[colurFlag], 1
 skip_color:
-inc byte[colour]
-mov ah, byte[colour]
+inc byte[colurFlag]
+mov ah, byte[colurFlag]
 mov al, 0x02;assici of food 
 mov word[es:di], ax
-
+pop dx; change color
 pop cx
 pop di
 pop es
 pop ax
 ret
 
-; Y-AXIS BORDER PRINTING FUNCTION
-border_y:                         
+
+; BORDER PRINTING FUNCTION
+printGameBorder:                         
     push bp
     mov bp, sp
     push ax
     push cx
     push es
     push di
-
+	push dx
     mov ax, 0xb800
     mov es, ax
-    mov di, [bp+4]
-    mov cx, 25
-looping_border_y:
-    mov word [es:di], 0x7020
-    add di, 160
-    loop looping_border_y
-
-    pop di
-    pop es
-    pop cx
-    pop ax
-    pop bp
-    ret 2
-
-
-; X-AXIS BORDER PRINTING FUNCTION
-border_x:                         
-    push bp
-    mov bp, sp
-    push ax
-    push cx
-    push es
-    push di
-
-    mov ax, 0xb800
-    mov es, ax
-    mov di, [bp+4]
-    mov cx, 80;80
-looping_border_x: 
-    mov word [es:di], 0x7020
-    add di, 2
-    loop looping_border_x
-
-    pop di
-    pop es
-    pop cx
-    pop ax
-    pop bp
-    ret 2
-
-
-; INNER X-AXIS BORDER PRINTING FUNCTION
-innerborder_x:                         
-    push bp
-    mov bp, sp
-    push ax
-    push cx
-    push es
-    push di
-
-    mov ax, 0xb800
-    mov es, ax
+	mov dx,[bp+8]; add 2 or 160
     mov di, [bp+6];strating point 
     mov cx, [bp+4];Ending point 
-looping_innerborder_x: 
+printGameBorderlab: 
     mov word [es:di], 0x7020
-    add di, 2
-    loop looping_innerborder_x
+    add di, dx
+    loop printGameBorderlab
 
+	pop dx
     pop di
     pop es
     pop cx
     pop ax
     pop bp
-    ret 4
-
-; INNER y-AXIS BORDER PRINTING FUNCTION
-innerborder_y:                         
-    push bp
-    mov bp, sp
-    push ax
-    push cx
-    push es
-    push di
-
-    mov ax, 0xb800
-    mov es, ax
-    mov di, [bp+6]
-    mov cx, [bp+4]
-looping_innerborder_y: 
-mov word [es:di], 0x7020
-    add di, 160
-    loop looping_innerborder_y
-
-    pop di
-    pop es
-    pop cx
-    pop ax
-    pop bp
-    ret 4
+    ret 6
 
 
-; ALL BORDER PRINTING AND CLEARING SCREEN (INITIALIZING GAME) FUNCTION
+; ALL BORDER PRINTING AND CLEARING SCREEN FUNCTION
 load_border:
 push ax
 
 call clear_scr
+push 160
 push 0
-call border_y
+push 25
+call printGameBorder
+push 160
 push 158
-call border_y
+push 25
+call printGameBorder
+push 2
 push 0
-call border_x
+push 80
+call printGameBorder
+push 2
 push 3840
-call border_x
-
+push 80
+call printGameBorder
+push 2
 push 1320
 push 40
-call innerborder_x
+call printGameBorder
+push 2
 push 2760
 push 40
-call innerborder_x
-
+call printGameBorder
+push 160
 push 1320
 push 3
-call innerborder_y
-
+call printGameBorder
+push 160
 push 2440
 push 3
-call innerborder_y
+call printGameBorder
+push 160
 push 1400
 push 3
-call innerborder_y
+call printGameBorder
+push 160
 push 2520
 push 3
-call innerborder_y
+call printGameBorder
+push 2
 push 1988
 push 14
-call innerborder_x
+call printGameBorder
 pop ax
 ret
 
@@ -459,18 +380,18 @@ print_snake:
     mov bx, pos       ;we start from 2nd line (postion: 162)
     mov cx, word[len]
     dec cx
-looping_snake:        ;snake body printing 
-	cmp byte[colour], 10
+snakeLable:        ;snake body printing 
+	cmp byte[colurFlag], 10
 	jne skip_color1
-	mov byte[colour], 1
+	mov byte[colurFlag], 1
 	skip_color1:
-	inc byte[colour]
-	mov ah, byte[colour]
+	inc byte[colurFlag]
+	mov ah, byte[colurFlag]
 	mov al,01
     mov di,[bx]
     mov word[es:di],ax   ;emojee assicc
     add bx, 2 
-    loop looping_snake
+    loop snakeLable
     mov di, [bx]    ;snake head printing
     mov word[es:di], 0x0A02  ;emojee
 
@@ -499,13 +420,19 @@ print_space:
     ret
 
 
-; RIGHT SHIFTING FUNCTION
-right_shifting:
+; MOVING TO NEXT LOCATION FUNCTION
+movingSnake:
+	push bp
+	mov bp,sp
     push ax
     push cx
     push si
     push di
-    
+	push dx
+	push bx
+
+
+	mov dx,[bp+6] ; add or sub
     mov di, pos
     mov si, pos
     mov ax, [pos];word 
@@ -513,126 +440,34 @@ right_shifting:
     mov [space], ax
     mov cx, [len]
     dec cx
-looping_right:
+movlab:
     mov ax , [si]
     mov [di], ax
     add si, 2
     add di, 2
-    loop looping_right
+    loop movlab
     mov bx, pos
     mov cx, [len]
     dec cx
     shl cx, 1
     add bx, cx
-    add word[bx],2 
-
+	cmp word[bp+4] , 0
+	jne other1
+    add word[bx], dx
+other1:
+	cmp word[bp+4] , 1
+	jne other2
+    sub word[bx], dx
+other2:	
+	pop bx
+	pop dx
     pop di
     pop si
     pop cx
     pop ax
-    ret
+	pop bp
+    ret 4
 
-
-; LEFT SHIFTING FUNCTION
-left_shifting:
-    push ax
-    push cx
-    push si
-    push di
-    
-    mov di, pos
-    mov si, pos
-    mov ax, word[pos]
-    add si, 2
-    mov word[space], ax
-    mov cx, word[len]
-    dec cx
-looping_left:
-    mov ax , word[si]
-    mov word[di], ax
-    add si, 2
-    add di, 2
-    loop looping_left
-    mov bx, pos
-    mov cx, word[len]
-    dec cx
-    shl cx, 1
-    add bx, cx
-    sub word[bx], 2
-
-    pop di
-    pop si
-    pop cx
-    pop ax
-    ret
-
-
-; DOWN SHIFTING FUNCTION
-down_shifting:
-    push ax
-    push cx
-    push si
-    push di
-    
-    mov di, pos
-    mov si, pos
-    mov ax, word[pos]
-    add si, 2
-    mov word[space], ax
-    mov cx, word[len]
-    dec cx
-looping_down:
-    mov ax , word[si]
-    mov word[di], ax
-    add si, 2
-    add di, 2
-    loop looping_down
-    mov bx, pos
-    mov cx, word[len]
-    dec cx
-    shl cx, 1
-    add bx, cx
-    add word[bx], 160
-
-    pop di
-    pop si
-    pop cx
-    pop ax
-    ret
-
-
-; DOWN SHIFTING FUNCTION
-up_shifting:
-    push ax
-    push cx
-    push si
-    push di
-    
-    mov di, pos
-    mov si, pos
-    mov ax, word[pos]
-    add si, 2
-    mov word[space], ax
-    mov cx, word[len]
-    dec cx
-looping_up:
-    mov ax , word[si]
-    mov word[di], ax
-    add si, 2
-    add di, 2
-    loop looping_up
-    mov bx, pos
-    mov cx, word[len]
-    dec cx
-    shl cx, 1
-    add bx, cx
-    sub word[bx], 160
-
-    pop di
-    pop si
-    pop cx
-    pop ax
-    ret
 ; INNER BORDER DEATH CHECKING FUNCTION
 check_border_inner:
 push ax
@@ -698,16 +533,17 @@ check_inner_right21:
 
 
     jmp skip_checking1
-found1:                             ;IF SNAKE TOUCHES BORDER, COME TO "found" AND EXIT
+found1:
     mov byte[dieFlag], 1
 skip_checking1:
 
-    pop bx                           ;IF NOT TOUCH BORDER, LEAVE THE LOOP AS IT IS
+    pop bx
     pop si
     pop dx
     pop cx
     pop ax
     ret
+	
 ; BORDER DEATH CHECKING FUNCTION
 check_border:
     push ax
@@ -723,15 +559,15 @@ check_border:
     add bx, cx
     mov ax, [bx]
     mov cx, 0
-check_left:                        ;LEFT SIDE BORDER CHECK
+check_left:
     cmp ax, cx
     je found
     add cx, 160
     cmp cx, 3840
-    jne check_left
+    jne check_left;
 
     mov cx, 158
-check_right:                       ;RIGHT SIDE BORDER CHECK
+check_right:
     cmp ax, cx
     je found
     add cx, 160
@@ -739,7 +575,7 @@ check_right:                       ;RIGHT SIDE BORDER CHECK
     jne check_right
 
     mov cx, 0
-check_up:                          ;TOP SIDE BORDER CHECK
+check_up:
     cmp ax, cx
     je found
     add cx, 2
@@ -747,14 +583,14 @@ check_up:                          ;TOP SIDE BORDER CHECK
     jne check_up
 
     mov cx, 3840
-check_down:                        ;BOTTOM SIDE BORDER CHECK
+check_down:
     cmp ax, cx
     je found
     add cx, 2
     cmp cx, 3998
     jne check_down
 	
-		mov bx ,1988
+	mov bx ,1988
 midLine1:
 	cmp ax,bx
 	je found
@@ -764,11 +600,11 @@ midLine1:
 	call check_border_inner
 	
     jmp skip_checking
-found:                             ;IF SNAKE TOUCHES BORDER, COME TO "found" AND EXIT
+found:
     mov byte[dieFlag], 1
 skip_checking:
 
-    pop bx                           ;IF NOT TOUCH BORDER, LEAVE THE LOOP AS IT IS
+    pop bx
     pop si
     pop dx
     pop cx
@@ -833,7 +669,7 @@ midLine:
 
 
 jmp skip_check1
-regenrate:                             ;IF SNAKE TOUCHES BORDER, COME TO "found" AND EXIT
+regenrate:
     call print_food
 skip_check1:
 
@@ -849,7 +685,7 @@ checking_food:
 
     mov ax, word[randNo]
     mov cx, 0
-checking_left:        ;LEFT SIDE BORDER CHECK
+checking_left:
     cmp ax, cx
     je founded
     add cx, 160
@@ -857,7 +693,7 @@ checking_left:        ;LEFT SIDE BORDER CHECK
     jne checking_left
 
     mov cx, 158
-checking_right:        ;RIGHT SIDE BORDER CHECK
+checking_right:
     cmp ax, cx
     je founded
     add cx, 160
@@ -865,7 +701,7 @@ checking_right:        ;RIGHT SIDE BORDER CHECK
     jne checking_right
 
     mov cx, 0
-checking_up:                          ;TOP SIDE BORDER CHECK
+checking_up:
     cmp ax, cx
     je founded
     add cx, 2
@@ -873,7 +709,7 @@ checking_up:                          ;TOP SIDE BORDER CHECK
     jne checking_up
 
     mov cx, 3840
-checking_down:                        ;BOTTOM SIDE BORDER CHECK
+checking_down:
     cmp ax, cx
     je founded
     add cx, 2
@@ -882,7 +718,7 @@ checking_down:                        ;BOTTOM SIDE BORDER CHECK
 	
 
     jmp skip_check
-founded:                             ;IF SNAKE TOUCHES BORDER, COME TO "found" AND EXIT
+founded:
     call print_food
 skip_check:
 
@@ -902,12 +738,14 @@ call check_border
 cmp byte[dieFlag], 1
 je death_left
 call print_snake
-call left_shifting
+push 2
+push 1
+call movingSnake ; for left
 call delay
 call print_space
-call eat
+call foodEated
 call self_collision
-call snake_int
+call keybordInterrupt
 jmp looping_left_move
 
 death_left:
@@ -922,19 +760,21 @@ mov byte[movFlag], 1;movement flag
 push cx
 push ax
 
-looping_right_move:
+right_move_Lab:
 mov byte[dieFlag], 0;death flag
 call check_border; set death flag
 cmp byte[dieFlag],1
 je death_right
 call print_snake
-call right_shifting
+push 2
+push 0
+call movingSnake
 call delay
 call print_space
-call eat
+call foodEated
 call self_collision
-call snake_int
-jmp looping_right_move
+call keybordInterrupt
+jmp right_move_Lab
 death_right:
 call game_over
 pop ax
@@ -947,21 +787,23 @@ move_up:
 push ax
 
 mov byte[movFlag], 3
-looping_up_move:
+up_move_lab:
 mov byte[dieFlag], 0
 call check_border
 cmp byte[dieFlag], 1
-je death_up
+je death_is
 call print_snake
-call up_shifting
+push 160
+push 1
+call movingSnake ; for up
 call delay
 call print_space
-call eat
+call foodEated
 call self_collision
-call snake_int
+call keybordInterrupt
 call delay
-jmp looping_up_move
-death_up:
+jmp up_move_lab
+death_is:
 call game_over
 pop ax
 pop cx
@@ -973,20 +815,22 @@ move_down:
 push ax
 
 mov byte[movFlag], 4
-looping_down_move:
+down_move_lab:
 mov byte[dieFlag], 0
 call check_border
 cmp byte[dieFlag], 1
 je death_down
 call print_snake
-call down_shifting
+push 160
+push 0
+call movingSnake
 call delay
 call print_space
-call eat
+call foodEated
 call self_collision
-call snake_int
+call keybordInterrupt
 call delay
-jmp looping_down_move
+jmp down_move_lab
 death_down:
 call game_over
 pop ax
@@ -998,22 +842,22 @@ movement:
     mov ah, 0
     int 0x16
 
-    cmp al, [A1]
+    cmp al, 'a';[A1]
 	jne skip1
     cmp byte[movFlag], 1
     jne move_left
     skip1:
-	cmp al, [D1]
+	cmp al, 'd';[D1]
 	jne skip2
     cmp byte[movFlag], 2
     jne move_right
     skip2:
-	cmp al, [W1]
+	cmp al, 'w';[W1]
 	jne skip3
     cmp byte[movFlag], 4
     jne move_up
     skip3:
-	cmp al, [S1]
+	cmp al, 's';[S1]
     cmp byte[movFlag], 3
     jne move_down
 	
@@ -1072,14 +916,14 @@ mov ax, word[bx]
 mov bx, pos
 mov cx, word[len]
 sub cx, 2
-looping_self:
+selfLab:
 cmp [bx], ax
 jne skip_self
 call game_over
 skip_self:
 add bx, 2
 dec cx
-jnz looping_self
+jnz selfLab
 
 pop cx
 pop ax
@@ -1101,29 +945,25 @@ game_over:
     add di, 2
     inc si
     loop lableOver
-    mov si, score_msg
-    mov ax, 0xb800
-    mov es, ax
-    mov di, 498
-    mov cx, 16
-    mov ah, 0x04
-    lableScore:
-    mov byte al, [si]
-    mov word[es:di], ax
-    add di, 2
-    inc si
-    loop lableScore
-    call print_score
-    mov cx, 3
-    loop_over_delay:
-    call delay
-    loop loop_over_delay
 
     mov ax, 0x4c00
     int 0x21
     ret
 
-; SNAKE  DATA
+
+movFlag: db 0
+colurFlag: db 1
+dieFlag: db 0
+randNo: dw 260
+msgOver: db 'Thanks For Playing Our Beauitiful Snake Game'
+score_msg: db 'Your Score is : '
+score: dw 0
+msg1:  db "****..........SNAKE GAME..........**** ",0
+names: db "-_  Asad Raza (22F-3850)",0
+names1: db "-_  Sharaz (22F-3425)",0
+str1: db "1.      UP(w) ", 0
+str2: db "2.      Left(A)  3.   Down(S)     4.  Right(D)", 0
+str3: db "CONTROLLING KEYS: ", 0
 len: dw 3
 space: dw 162
 pos: dw 162, 164, 166
